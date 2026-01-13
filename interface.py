@@ -262,28 +262,22 @@ class MainWindow(QtWidgets.QMainWindow):
 
     
     def on_button_click(self):
-        print("Button clicked!")  # Debug
         # Create and start the speed test thread
         self.speedtest_button.setEnabled(False)
         self.speedtest_button.setText("Running...")
         self.speedtest_console.clear()
-        print("About to start thread...")  # Debug
 
 
             # Start thread
         self.thread = SpeedTestThread()
         self.thread.progressUpdate.connect(self.update_progress)  # ADD THIS
         self.thread.speedTestCompleted.connect(self.show_results)
-        print("Starting thread now...")  # Debug
         self.thread.start()
-        print("Thread started!")  # Debug
         self.thread.finished.connect(self.on_test_finished)
     
     def update_progress(self, message):
         # This method will be called to update progress messages
-        print(f"update_progress called with: {message}")  # Debug
         self.speedtest_console.append(message)
-        print(f"Console updated")  # Debug
 
     def on_test_finished(self):
         self.speedtest_button.setEnabled(True)
