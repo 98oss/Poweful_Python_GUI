@@ -10,24 +10,30 @@ class SpeedTestThread(QtCore.QThread):
 
 ################DEBUG SECTION####################
     speedTestCompleted = QtCore.pyqtSignal(str, str)
+    progressUpdate = QtCore.pyqtSignal(str) # Signal to emit progress updates
 
     def run(self):
+        print("Thread run() started!")  # Debug
         try:
-            print("Starting download test...")  # Debug
+            print("Emitting first progress...")  # Debug
+            self.progressUpdate.emit("Starting WIFI speed test...")
+
+            print("Calling download...")  # Debug
+            self.progressUpdate.emit("Running download test...")
             download_result = speedtest_logger.download()
             print(f"Download done: {download_result}")  # Debug
-            
-            print("Starting upload test...")  # Debug
+
+            print("Calling upload...")  # Debug
+            self.progressUpdate.emit("Running upload test...")
             upload_result = speedtest_logger.upload()
             print(f"Upload done: {upload_result}")  # Debug
-            
+
+            self.progressUpdate.emit("WIFI speed test completed.")
             self.speedTestCompleted.emit(download_result, upload_result)
-            print("Signal emitted")  # Debug
+            print("Signals emitted!")  # Debug
         except Exception as e:
-            print(f"Error in thread: {e}")  # See what's failing
-            self.speedTestCompleted.emit(f"Error: {e}", "")
-            self.speedTestCompleted.emit(f"Error: {e}", "")
-        
+            print(f"Exception in thread: {e}")  # Debug
+            self.progressUpdate.emit(f"Error during speed test: {e}")
     
 
 ######################MAIN WINDOW#####################
@@ -235,37 +241,53 @@ class MainWindow(QtWidgets.QMainWindow):
         layout = QtWidgets.QVBoxLayout()
 
         # Speed button
-        self.button = QtWidgets.QPushButton("Run Speed Test")
-        self.button.setFixedSize(200, 50)
-        self.button.clicked.connect(self.on_button_click)  # ADD THIS
+        self.speedtest_button = QtWidgets.QPushButton("Run Speed Test")
+        self.speedtest_button.setFixedSize(200, 50)
+        self.speedtest_button.clicked.connect(self.on_button_click)  # ADD THIS
         
-        self.console = QtWidgets.QTextEdit()
-        self.console.setReadOnly(True)
-        self.console.append("Welcome! Click 'Run Speed Test' to start.\n")
+        self.speedtest_console = QtWidgets.QTextEdit()
+        self.speedtest_console.setReadOnly(True)
+        self.speedtest_console.append("Welcome! Click 'Run Speed Test' to start.\n")
 
-        # REMOVE all the thread starting code (lines 148-156)
-
-        layout.addWidget(self.button)
-        layout.addWidget(self.console)
+        layout.addWidget(self.speedtest_button)
+        layout.addWidget(self.speedtest_console)
         page.setLayout(layout)
         return page
     
     def show_results(self, download_result, upload_result):
         #This method will be called when the speed test is completed
-        self.console.append(f"{download_result}\n")
-        self.console.append(f"{upload_result}\n")
-        self.console.append("Speed tests completed.\n")
+        self.speedtest_console.append(f"{download_result}\n")
+        self.speedtest_console.append(f"{upload_result}\n")
+        self.speedtest_console.append("Speed tests completed.\n")
 
     
     def on_button_click(self):
+        print("Button clicked!")  # Debug
         # Create and start the speed test thread
-        self.button.setEnabled(False)
-        self.button.setText("Running...")
-        self.console.append("Starting speed tests...")
+        self.speedtest_button.setEnabled(False)
+        self.speedtest_button.setText("Running...")
+        self.speedtest_console.clear()
+        print("About to start thread...")  # Debug
+
+
+            # Start thread
+        self.thread = SpeedTestThread()
+        self.thread.progressUpdate.connect(self.update_progress)  # ADD THIS
+        self.thread.speedTestCompleted.connect(self.show_results)
+        print("Starting thread now...")  # Debug
+        self.thread.start()
+        print("Thread started!")  # Debug
+        self.thread.finished.connect(self.on_test_finished)
+    
+    def update_progress(self, message):
+        # This method will be called to update progress messages
+        print(f"update_progress called with: {message}")  # Debug
+        self.speedtest_console.append(message)
+        print(f"Console updated")  # Debug
 
     def on_test_finished(self):
-        self.button.setEnabled(True)
-        self.button.setText("Run Speed Test")  
+        self.speedtest_button.setEnabled(True)
+        self.speedtest_button.setText("Run Speed Test")  
 
 
         #Start thread
