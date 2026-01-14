@@ -14,6 +14,7 @@ WIFI SPEED TESTER
 
 Alright this is starting to get a bit much, i am probably going to update the code and logic shortly as atm i just craming everything into 1 file and its starting 
 to make my head go turnmoil! 
+![alt text](image.png)
 
 Add new dark and light mode function as well as setting to the program!
 
